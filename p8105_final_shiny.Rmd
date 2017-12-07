@@ -12,7 +12,6 @@ library(tidyverse)
 library(janitor)
 library(plotly)
 library(stringr)
-library(ggridges)
 library(shiny)
 
 final.dat = read_csv("../data/business_finaldata.csv") 
@@ -74,10 +73,11 @@ Row
 renderPlotly({
   final.dat %>%
     mutate(text_label = str_c('Name:',name,"\nPostal code: ", postal_code, '\nAddress: ', address, '\nCategory: ', category)) %>% 
-#  filter(category == input$category,
-#         stars %in% input$star_range[1]:input$star_range[2],
-#         postal_code == input$postal_code
-#         reordered == input$order_choice) %>% 
+    filter(category == input$category_choice,
+           stars %in% input$star[1]:input$star[2],
+           review_count %in% input$review_num[1]:input$review_num[2],
+           #RestaurantsPriceRange2 %in% input$price_range[1]:input$price_range[2]:input$price_range[3]:input$price_range[4]
+           ) %>%
     plot_ly(x = ~longitude, y = ~latitude, type = "scatter", mode = "markers",
           alpha = 0.5, 
           color = ~category,
@@ -91,7 +91,7 @@ Row {.tabset .tabset-fade}
 
 ### Days Since Prior Order in Different Aisles
 
-```{r}
+```{r ,include = FALSE}
 y = list(title = "Days Since Prior Order")
 
 renderPlotly({
@@ -116,7 +116,7 @@ final.dat %>%
 
 ### Order Rush Hour
 
-```{r}
+```{r, include = FALSE}
 renderPlotly({bar_plot = 
   instacart %>% 
   filter(department == input$dpt_choice,
