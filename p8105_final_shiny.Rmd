@@ -1,0 +1,134 @@
+---
+title: "p8105 final shiny"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: row
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(tidyverse)
+library(janitor)
+library(plotly)
+library(stringr)
+library(ggridges)
+library(shiny)
+
+final.dat = read_csv("../data/business_finaldata.csv") 
+```
+
+Column {.sidebar}
+-----------------------------------------------------------------------
+
+This `flexdashboard` with Shiny was made for Data Science Homework 6 Problem 2 by Yeyi Zhang and Huijuan Zhang. The data come from [Instacart](http://jeffgoldsmith.com/DSI/dataset_instacart.html), which provides the Instacart online grocery shopping dataset.
+
+```{r}
+departments = instacart %>% distinct(department) %>% pull()
+
+# selectInput widget
+selectInput("dpt_choice", label = h3("Select department"),
+            choices = departments, selected = "alcohol")
+
+max_hour = 23
+min_hour = 0
+
+# sliderInput widget
+sliderInput("hour_range", label = h3("Choose hour range"),
+            min = min_hour, max = max_hour, value = c(0, 23))
+
+order_choices = 
+  instacart %>%
+  distinct(reordered) %>% 
+  pull()
+
+# radioButtons widget
+radioButtons("order_choice", label = h3("Choose order type"),
+             choices = order_choices,
+             selected = "Reordered")
+```
+
+Row
+-----------------------------------------------------------------------
+
+### Order Hour of Day in Different Aisles
+
+```{r}
+renderPlotly({violin_ggplot = 
+  instacart %>%
+  filter(department == input$dpt_choice,
+         order_hour_of_day %in% input$hour_range[1]:input$hour_range[2],
+         reordered == input$order_choice) %>% 
+  mutate(department = forcats::fct_reorder(department, order_hour_of_day, fun = IQR)) %>%
+  ggplot(aes(x = aisle, y = days_since_prior_order)) +
+  geom_violin(aes(fill = aisle), color = "blue", alpha = .5) +
+  stat_summary(fun.y = median, geom = "point", color = "blue", size = 2) +
+  guides(fill = "none") +
+  labs(
+    y = "Order Hour of Day",
+    caption = "Data from Instacart"
+  ) +
+  theme_bw() +
+  coord_flip() +
+  theme(axis.text.y = element_blank())
+
+ggplotly(violin_ggplot)
+})
+
+final.dat %>%
+  mutate(text_label = str_c('Name:',name,"\nPostal code: ", postal_code, '\nAddress: ', address, '\nCategory: ', category)) %>% 
+  plot_ly(x = ~longitude, y = ~latitude, type = "scatter", mode = "markers",
+          alpha = 0.5, 
+          color = ~category,
+          text = ~text_label)
+```
+
+Row {.tabset .tabset-fade}
+-----------------------------------------------------------------------
+
+### Days Since Prior Order in Different Aisles
+
+```{r}
+y = list(title = "Days Since Prior Order")
+
+renderPlotly({
+  instacart %>%
+    filter(days_since_prior_order > 0, 
+           department == input$dpt_choice,
+           order_hour_of_day %in% input$hour_range[1]:input$hour_range[2],
+           reordered == input$order_choice) %>%
+    plot_ly(y = ~days_since_prior_order, color = ~aisle, type = "box", colors = "Set1") %>% 
+    layout(yaxis = y)
+})
+
+
+final.dat %>% 
+  group_by(category) %>%
+   mutate(median_review = median(review_count)) %>%
+   ungroup()%>%
+   mutate(category = fct_reorder(category, median_review)) %>% 
+  plot_ly(y = ~review_count, color = ~category, type = "box",
+          colors = "Set2")
+```
+
+### Order Rush Hour
+
+```{r}
+renderPlotly({bar_plot = 
+  instacart %>% 
+  filter(department == input$dpt_choice,
+         order_hour_of_day %in% input$hour_range[1]:input$hour_range[2],
+         reordered == input$order_choice) %>%
+  ggplot(aes(x = order_hour_of_day)) +
+  geom_bar(fill = "light blue") +
+  theme_bw()
+
+ggplotly(bar_plot)})
+
+final.dat%>% 
+group_by(category) %>% 
+mutate(mean_review = round(mean(review_count),digits=0)) %>% 
+ungroup()%>%
+mutate(category = fct_reorder(category, mean_review)) %>%  
+plot_ly(x = ~category, y = ~mean_review, color = ~category, type = "bar")
+```
