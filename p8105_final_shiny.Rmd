@@ -24,28 +24,45 @@ Column {.sidebar}
 This `flexdashboard` with Shiny was made for Data Science Homework 6 Problem 2 by Yeyi Zhang and Huijuan Zhang. The data come from [Instacart](http://jeffgoldsmith.com/DSI/dataset_instacart.html), which provides the Instacart online grocery shopping dataset.
 
 ```{r}
-departments = instacart %>% distinct(department) %>% pull()
+category = final.dat %>% distinct(category) %>% pull()
 
-# selectInput widget
-selectInput("dpt_choice", label = h3("Select department"),
-            choices = departments, selected = "alcohol")
+# selectInput widget for category
+selectInput("category_choice", label = h3("Select category"),
+            choices = category, selected = "American (Traditional)")
+
+
+day = final.dat %>% distinct(day) %>% pull()
+# selectInput widget for days
+selectInput("day_choice", label = h3("Select day"),
+            choices = day, selected = "Monday")
+
 
 max_hour = 23
 min_hour = 0
-
-# sliderInput widget
+# sliderInput widget for opening hours
 sliderInput("hour_range", label = h3("Choose hour range"),
             min = min_hour, max = max_hour, value = c(0, 23))
 
-order_choices = 
-  instacart %>%
-  distinct(reordered) %>% 
-  pull()
 
-# radioButtons widget
-radioButtons("order_choice", label = h3("Choose order type"),
-             choices = order_choices,
-             selected = "Reordered")
+max_rev = 1000
+min_rev = 200
+# sliderInput widget for review count
+sliderInput("review_num", label = h3("Choose the range of number of reviews"),
+            min = min_rev, max = max_rev, value = c(0, 3000))
+
+
+max_star = 4.5
+min_star = 2.5
+# sliderInput widget for stars
+sliderInput("star", label = h3("Choose the range of stars"),
+            min = min_star, max = max_star, value = c(0, 5))
+
+
+
+# checkboxGroup widget for priceRange
+checkboxGroupInput("price_range", label = h3("Choose the price range"), 
+    choices = list("$" = 1, "$$" = 2, "$$$" = 3,"$$$$" = 4),
+    selected = 1)
 ```
 
 Row
