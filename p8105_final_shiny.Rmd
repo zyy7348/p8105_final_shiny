@@ -54,33 +54,19 @@ Row
 ### Order Hour of Day in Different Aisles
 
 ```{r}
-renderPlotly({violin_ggplot = 
-  instacart %>%
-  filter(department == input$dpt_choice,
-         order_hour_of_day %in% input$hour_range[1]:input$hour_range[2],
-         reordered == input$order_choice) %>% 
-  mutate(department = forcats::fct_reorder(department, order_hour_of_day, fun = IQR)) %>%
-  ggplot(aes(x = aisle, y = days_since_prior_order)) +
-  geom_violin(aes(fill = aisle), color = "blue", alpha = .5) +
-  stat_summary(fun.y = median, geom = "point", color = "blue", size = 2) +
-  guides(fill = "none") +
-  labs(
-    y = "Order Hour of Day",
-    caption = "Data from Instacart"
-  ) +
-  theme_bw() +
-  coord_flip() +
-  theme(axis.text.y = element_blank())
-
-ggplotly(violin_ggplot)
-})
-
-final.dat %>%
-  mutate(text_label = str_c('Name:',name,"\nPostal code: ", postal_code, '\nAddress: ', address, '\nCategory: ', category)) %>% 
-  plot_ly(x = ~longitude, y = ~latitude, type = "scatter", mode = "markers",
+renderPlotly({
+  final.dat %>%
+    mutate(text_label = str_c('Name:',name,"\nPostal code: ", postal_code, '\nAddress: ', address, '\nCategory: ', category)) %>% 
+#  filter(category == input$category,
+#         stars %in% input$star_range[1]:input$star_range[2],
+#         postal_code == input$postal_code
+#         reordered == input$order_choice) %>% 
+    plot_ly(x = ~longitude, y = ~latitude, type = "scatter", mode = "markers",
           alpha = 0.5, 
           color = ~category,
           text = ~text_label)
+})
+
 ```
 
 Row {.tabset .tabset-fade}
