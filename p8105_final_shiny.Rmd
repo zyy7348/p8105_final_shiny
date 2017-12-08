@@ -13,14 +13,27 @@ library(janitor)
 library(plotly)
 library(stringr)
 library(shiny)
+library(forcats)
+library(shinythemes)
 
 final.dat = read_csv("../data/final_dat.csv") 
+
+ax <- list(
+  title = "",
+  zeroline = FALSE,
+  showline = FALSE,
+  showticklabels = FALSE,
+  showgrid = FALSE
+)
+
+
+
 ```
 
-Column {.sidebar}
------------------------------------------------------------------------
+Sidebar {.sidebar}
+================================================
 
-This `flexdashboard` with Shiny was made for Data Science Homework 6 Problem 2 by Yeyi Zhang and Huijuan Zhang. The data come from [Instacart](http://jeffgoldsmith.com/DSI/dataset_instacart.html), which provides the Instacart online grocery shopping dataset.
+In this Shiny, we would like to recommend fittest restaurants for customers to satisfy their demand. The data come from [Yelp](https://drive.google.com/drive/folders/190oLdoSyZVnydl9Jxth8G7aKzu3bDgee?usp=sharing).
 
 ```{r}
 category = final.dat %>% distinct(category) %>% pull()
@@ -36,22 +49,28 @@ selectInput("day_choice", label = h3("Select day"),
             choices = day, selected = "Monday")
 
 
-max_hour = 23
-min_hour = 0
+max_open = 23
+min_open = 0
 # sliderInput widget for opening hours
-sliderInput("hour_range", label = h3("Choose hour range"),
-            min = min_hour, max = max_hour, value = c(0, 23))
+sliderInput("open_range", label = h3("Choose open hour range"),
+            min = min_open, max = max_open, value = c(0, 23))
+
+max_close = 23
+min_close = 0
+# sliderInput widget for opening hours
+sliderInput("close_range", label = h3("Choose close hour range"),
+            min = min_close, max = max_close, value = c(0, 23))
 
 
-max_rev = 1000
-min_rev = 200
+max_rev = 3000
+min_rev = 0
 # sliderInput widget for review count
 sliderInput("review_num", label = h3("Choose the range of number of reviews"),
             min = min_rev, max = max_rev, value = c(0, 3000))
 
 
-max_star = 4.5
-min_star = 2.5
+max_star = 5
+min_star = 0
 # sliderInput widget for stars
 sliderInput("star", label = h3("Choose the range of stars"),
             min = min_star, max = max_star, value = c(0, 5))
@@ -64,12 +83,13 @@ checkboxGroupInput("price_range", label = h3("Choose the price range"),
     selected = 1)
 ```
 
-Row
------------------------------------------------------------------------
+ Map of restaurants in AZ
+==================================================
 
 ### Map of restaurants in AZ
 
 ```{r}
+
 renderPlotly({
   final.dat %>%
     mutate(text_label = str_c('Name:',name,"\nPostal code: ", postal_code, '\nAddress: ', address, '\nCategory: ', category)) %>% 
@@ -77,9 +97,10 @@ renderPlotly({
            stars %in% input$star[1]:input$star[2],
            review_count %in% input$review_num[1]:input$review_num[2],
            RestaurantsPriceRange2 %in% input$price_range,
-           days == input$days,
-           open == input$hour_range[1],
-           close == input$hour_range[2]) %>%
+           days == input$day_choice,
+           open %in% input$open_range[1]:input$open_range[2],
+           close %in% input$close_range[1]:input$close_range[2]
+           ) %>%
     plot_ly(x = ~longitude, y = ~latitude, type = "scatter", mode = "markers",
           alpha = 0.5, 
           color = ~category,
@@ -88,10 +109,10 @@ renderPlotly({
 
 ```
 
-Row {.tabset .tabset-fade}
------------------------------------------------------------------------
+Distribution of number of reviews in different categories{.tabset .tabset-fade}
+=========================================
 
-### Distribution of number of reviews in different categories
+###Distribution of number of reviews in different categories
 
 ```{r}
 renderPlotly({
@@ -100,48 +121,38 @@ final.dat %>%
    mutate(median_review = median(review_count)) %>%
    ungroup()%>%
    mutate(category = fct_reorder(category, median_review)) %>% 
-  filter(category == input$category_choice,
+  filter(
            stars %in% input$star[1]:input$star[2],
            review_count %in% input$review_num[1]:input$review_num[2],
-           RestaurantsPriceRange2 %in% input$price_range,
-           days == input$days,
-           open == input$hour_range[1],
-           close == input$hour_range[2]) %>%
+           RestaurantsPriceRange2 %in% input$price_range
+           ) %>%
   plot_ly(y = ~review_count, color = ~category, type = "box",
-          colors = "Set2")  
+          colors = "Set2") %>%
+  layout(xaxis = ax) 
   
 })
 
 ```
 
-### Mean number of reviews in different categories (in order)
 
-```{r, include = FALSE}
-renderPlotly({bar_plot = 
-  instacart %>% 
-  filter(department == input$dpt_choice,
-         order_hour_of_day %in% input$hour_range[1]:input$hour_range[2],
-         reordered == input$order_choice) %>%
-  ggplot(aes(x = order_hour_of_day)) +
-  geom_bar(fill = "light blue") +
-  theme_bw()
+Mean number of reviews in different categories (in order){.tabset .tabset-fade}
+=========================================
+Mean number of reviews in different categories (in order)
 
-ggplotly(bar_plot)})
-
+```{r}
 renderPlotly({
 final.dat%>% 
 group_by(category) %>% 
 mutate(mean_review = round(mean(review_count),digits=0)) %>% 
 ungroup()%>%
 mutate(category = fct_reorder(category, mean_review)) %>%  
-filter(category == input$category_choice,
+filter(
            stars %in% input$star[1]:input$star[2],
            review_count %in% input$review_num[1]:input$review_num[2],
-           RestaurantsPriceRange2 %in% input$price_range,
-           days == input$days,
-           open == input$hour_range[1],
-           close == input$hour_range[2]) %>%
-plot_ly(x = ~category, y = ~mean_review, color = ~category, type = "bar")  
+           RestaurantsPriceRange2 %in% input$price_range
+           ) %>%
+plot_ly(x = ~category, y = ~mean_review, color = ~category, type = "bar")%>%
+  layout(xaxis = ax)
   
 })
 
