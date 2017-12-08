@@ -1,10 +1,12 @@
 name: p8105_final_shiny
-title:
+title: p8105_final_shiny
 username:
 account: yeyizhang
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 246003
-bundleId: 1122533
+bundleId: 1122537
 url: https://yeyizhang.shinyapps.io/p8105_final_shiny/
-when: 1512708684.37298
+when: 1512708936.10309
+asMultiple: FALSE
+asStatic: FALSE
